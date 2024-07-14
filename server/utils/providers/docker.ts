@@ -1,6 +1,7 @@
 import { createWriteStream } from "node:fs";
 import { type ApplicationNested, mechanizeDockerContainer } from "../builders";
 import { pullImage } from "../docker/utils";
+import { spawnAsync } from "../process/spawnAsync";
 
 interface RegistryAuth {
 	username: string;
@@ -28,15 +29,21 @@ export const buildDocker = async (
 		if (!dockerImage) {
 			throw new Error("Docker image not found");
 		}
-
-		await pullImage(
-			dockerImage,
+		await spawnAsync(
+			"docker",
+			["pull", dockerImage],
 			(data) => {
+				console.log(data.toString());
 				if (writeStream.writable) {
-					writeStream.write(`${data.status}\n`);
+					writeStream.write(`${data.toString()}\n`);
 				}
 			},
-			authConfig,
+			{
+				env: {
+					...process.env,
+					DOCKER_CONFIG: "/root/.docker/config.json",
+				},
+			},
 		);
 		await mechanizeDockerContainer(application);
 		writeStream.write("\nDocker Deployed: ✅\n");

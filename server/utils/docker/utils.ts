@@ -6,6 +6,7 @@ import type { ContainerInfo, ResourceRequirements } from "dockerode";
 import type { ApplicationNested } from "../builders";
 import { execAsync } from "../process/execAsync";
 import { parse } from "dotenv";
+import { spawnAsync } from "../process/spawnAsync";
 
 interface RegistryAuth {
 	username: string;
@@ -24,27 +25,74 @@ export const pullImage = async (
 		}
 
 		await new Promise((resolve, reject) => {
-			docker.pull(dockerImage, { authconfig: authConfig }, (err, stream) => {
-				if (err) {
-					reject(err);
-					return;
+			spawnAsync("docker", ["pull", dockerImage], (data) => {
+				console.log(data.toString());
+				if (data.toString().includes("Status: Image is up to date for")) {
+					resolve(data);
 				}
+				// if (err) {
+				// 	reject(err);
+				// 	return;
+				// }
 
-				docker.modem.followProgress(
-					stream as Readable,
-					(err: Error | null, res) => {
-						if (!err) {
-							resolve(res);
-						}
-						if (err) {
-							reject(err);
-						}
-					},
-					(event) => {
-						onData?.(event);
-					},
-				);
+				// docker.modem.followProgress(
+				// 	stream as Readable,
+				// 	(err: Error | null, res) => {
+				// 		if (!err) {
+				// 			resolve(res);
+				// 		}
+				// 		if (err) {
+				// 			reject(err);
+				// 		}
+				// 	},
+				// 	(event) => {
+				// 		onData?.(event);
+				// 	},
+				// );
 			});
+			// execAsync(`docker pull ${dockerImage}`, (err, stream) => {
+			// 	if (err) {
+			// 		reject(err);
+			// 		return;
+			// 	}
+
+			// 	docker.modem.followProgress(
+			// 		stream as Readable,
+			// 		(err: Error | null, res) => {
+			// 			if (!err) {
+			// 				resolve(res);
+			// 			}
+			// 			if (err) {
+			// 				reject(err);
+			// 			}
+			// 		},
+			// 		(event) => {
+			// 			onData?.(event);
+			// 		},
+			// 	);
+
+			// });
+			// docker.pull(dockerImage, { authconfig: authConfig }, (err, stream) => {
+			// 	if (err) {
+			// 		reject(err);
+			// 		return;
+			// 	}
+
+			// 	docker.modem.followProgress(
+			// 		stream as Readable,
+			// 		(err: Error | null, res) => {
+			// 			if (!err) {
+			// 				resolve(res);
+			// 			}
+			// 			if (err) {
+			// 				reject(err);
+			// 			}
+			// 		},
+			// 		(event) => {
+			// 			onData?.(event);
+			// 		},
+			// 	);
+			// });
 		});
 	} catch (error) {
 		throw error;
